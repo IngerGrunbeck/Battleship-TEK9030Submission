@@ -7,16 +7,19 @@ Created on Mon Apr 12 10:51:49 2021
 """
  Tested part of code 
 """
-#%% import packages and image
+
+#import packages and image
 import cv2
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
 
-sample=r'C:\Users\inger\Pictures\Camera Roll\grid_hog_opplosning.jpg'
+sample=r'C:\Users\inger\Pictures\Camera Roll\grid9.jpg'
 #r'C:\Users\inger\Downloads\data-table-example1.png'
 read_image= cv2.imread(sample,0)
+
+numr_boxes = 9
 
 #%% processing, threshold
 convert_bin,grey_scale = cv2.threshold(read_image,128,255,cv2.THRESH_BINARY | cv2.THRESH_OTSU)
@@ -73,8 +76,6 @@ def get_boxes(num, method="left-to-right"):
 cont, boxes = get_boxes(cont, method="left-to-right")
 
 
-
-
 #Correction of the boxes, eliminating the boxes significant smaller or larger than the mean
 
 sum_3 = 0
@@ -89,30 +90,35 @@ mean_4 = sum_4/len(boxes)
 final_box = []
 for box in boxes:
     s1, s2, s3, s4 = box
-    if ((mean_3 - mean_3*0.2) < s3 < (mean_3 + mean_3*0.2)) and ((mean_4 - mean_4*0.2) < s4 < (mean_4 + mean_4*0.2)):
+    if ((mean_3*0.5) < s3 < (mean_3*1.5)) and ((mean_4*0.5) < s4 < (mean_4*1.5)):
         rectangle_img = cv2.rectangle(read_image,(s1,s2),(s1+s3,s2+s4),(0,255,0),2)
         final_box.append([s1,s2,s3,s4])
         
-#If not all boxes were identified, we interpolate the missing boxes
-index = []
-for nr, box in enumerate(final_box[1:]):
-   if ((mean_4+mean_4*0.3) < abs(box[1] - final_box[nr][1]) < mean_4*5):
-           index.append(nr+1)
-   
-if index:          
-    new_rec = [int((final_box[index-1][0]+final_box[index][0])/2), 
-               int(final_box[index-1][1]+mean_4), 
-               int(mean_3), int(mean_4)]
-
-    # We add the newly created boxes to the box list and image
-    final_box.insert(index[0], new_rec)
-    rectangle_img = cv2.rectangle(read_image,(new_rec[0],new_rec[1]),(new_rec[0]+new_rec[2],new_rec[1]+new_rec[3]),(0,255,0),2)
+if len(final_box) != numr_boxes:        
+    #If not all boxes were identified, we interpolate the missing boxes
+    index = []
+    for nr, box in enumerate(final_box[1:]):
+       if ((mean_4+mean_4*0.3) < abs(box[1] - final_box[nr][1]) < mean_4*5):
+               index.append(nr+1)
+       
+    if index and len(index)<2:          
+        new_rec = [int((final_box[index[0]-1][0]+final_box[index[0]][0])/2), 
+                   int(final_box[index[0]-1][1]+mean_4), 
+                   int(mean_3), int(mean_4)]
     
+        # We add the newly created boxes to the box list and image
+        final_box.insert(index[0], new_rec)
+        rectangle_img = cv2.rectangle(read_image,(new_rec[0],new_rec[1]),(new_rec[0]+new_rec[2],new_rec[1]+new_rec[3]),(0,255,0),2)
     
+    elif index:
+        print('more than one missing')
+        
 plt.figure()
 plt.title('Final Boxes')
 box_plot = plt.imshow(rectangle_img,cmap='gray')
 plt.show()
+
+
 
 
 #%% Not tested yet
