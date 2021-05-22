@@ -30,7 +30,7 @@ def intersection(line1, line2):
         return int((b2*c1 - b1*c2)/det), int((a1*c2 - a2*c1)/det)
 
 
-def transformation(img, edges, rgb_img=None, plot_img=False):
+def transformation(img, edges, rgb_img=None, plot_img=False, origin_plot=False):
     rho = 1  # distance resolution in pixels of the Hough grid
     theta = np.pi / 180  # angular resolution in radians of the Hough grid
     threshold = 15  # minimum number of votes (intersections in Hough grid cell)
@@ -58,8 +58,8 @@ def transformation(img, edges, rgb_img=None, plot_img=False):
     inter = []
     for ho_line in horizontal_lines:
         for ve_line in vertical_lines:
-            x,y = intersection(ho_line, ve_line)
-            if x:
+            x, y = intersection(ho_line, ve_line)
+            if x and (x < img.shape[1]) and (y < img.shape[0]):
                 inter.append([x, y])
      
     # Identify the outerpoints of the grid's main corners
@@ -82,7 +82,7 @@ def transformation(img, edges, rgb_img=None, plot_img=False):
     hb = np.sqrt((pts1[0][0]-pts1[3][0])**2 + (pts1[0][1]-pts1[3][1])**2)
     maxh = max(int(ha), int(hb))
     
-    pts2 = np.array([[0,0], [maxw-1, 0], [maxw-1, maxh-1], [0, maxh-1]], dtype='float32')
+    pts2 = np.array([[0, 0], [maxw-1, 0], [maxw-1, maxh-1], [0, maxh-1]], dtype='float32')
 
     mtx = cv2.getPerspectiveTransform(pts1, pts2)
     dst = cv2.warpPerspective(img, mtx, (maxw, maxh))
@@ -99,10 +99,11 @@ def transformation(img, edges, rgb_img=None, plot_img=False):
                 cv2.line(line_image, (x1, y1), (x2, y2), (255, 0, 0), 5)
         lines_edges = cv2.addWeighted(rgb_img, 0.8, line_image, 1, 0)
         points = cv2.addWeighted(lines_edges, 0.8, point_image, 1, 0)    
-        
-        plt.figure()
-        plt.imshow(points)
-        plt.show()
+
+        if origin_plot:
+            plt.figure()
+            plt.imshow(points)
+            plt.show()
         
         plt.figure()
         plt.imshow(dst)
