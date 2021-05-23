@@ -1,17 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue May 18 13:16:56 2021
+Created on Tue May 18 2021
 
-@author: Inger
-
-insp:
-https://www.pyimagesearch.com/2014/08/25/4-point-opencv-getperspective-transform-example/
-https://stackoverflow.com/questions/45322630/how-to-detect-lines-in-opencv
-https://aishack.in/tutorials/solving-intersection-lines-efficiently/
-
+@author: Inger Grünbeck (inger.gruenbeck@gmail.com)
+Project: TEK9030 - Implementing Battleship
 """
 import copy
-
 from grid_read import Grid
 import random
 import matplotlib.pyplot as plt
@@ -58,19 +52,23 @@ def computer_grid(coordinates, ships):
 
 
 def main():
+    # Generate the grid's coordinates
     coordinates = []
     for i in range(3):
         for j in range(3):
             coordinates.append((i, j))
 
+    # Pass the ships (number and size: 1 2-sized ship, 2 1-sized ships) to the computer
+    # Generate the computers ships
     ships = [2, 1, 1]
     computer_sol = computer_grid(coordinates=coordinates, ships=ships)
 
+    # Initialize the grid and calculate homography/transformation matrix
     print("----------------")
-    print("Draw a 3 by 3 grid with a black marker. \nPlace the grid in the view of the camera.\n"
+    print("Draw a 3 by 3 grid with a black marker.\nMark the axes in the grid with their corresponsing numbers from 0 to 2, starting in the upper-left corner."
+          "\nPlace the grid in the view of the camera.\n"
           "It is important that the grid is not moved relative to the camera while playing.")
     input("Press enter when you are ready to read in the grid:")
-
     grid_check = True
     while grid_check:
         grid = Grid()
@@ -80,6 +78,8 @@ def main():
         plt.close('all')
         if char == 'y':
             break
+
+    # Create the players solution
     print("----------------")
     print("Place squares made out of cardboard, your markers, \non the grid to symbolize were your ships are placed. "
           "\nPlace two ships consisting of on marker each,"
@@ -87,13 +87,14 @@ def main():
     input("Are you ready to read in your solution? \nIf yes, press enter:")
     player_sol = grid.update(sol=True)
 
+    # Start the game. The while loop runs until all ships in either the player or the computers grid are hit
     print("----------------")
     print("Ok, the game is set up and ready to play. \nRemove your markers from the grid.")
     input("Press enter when you are ready to play:")
     while computer_sol and player_sol:
         # Player's turn
         print("----------------")
-        input("Place a marker on your guess. \nPress enter when ready:")
+        input("Place a new marker on your guess. \nPress enter when ready:")
         guess_p = grid.update()
         if guess_p in computer_sol:
             print("----------------")
@@ -116,6 +117,7 @@ def main():
         else:
             print("The computer missed")
 
+    # Evaluate who won the game and release the camera-link
     grid.end(computer_sol=computer_sol, player_sol=player_sol)
 
 

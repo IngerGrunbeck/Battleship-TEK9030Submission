@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue May 18 13:16:56 2021
+Created on Tue May 18 2021
 
-@author: Inger Grünbeck
-
+@author: Inger Grünbeck (inger.gruenbeck@gmail.com)
+Project: TEK9030 - Implementing Battleship
 """
-
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
@@ -31,30 +30,30 @@ def intersection(line1, line2):
 
 
 def transformation(img, edges, rgb_img=None, plot_img=False, origin_plot=False):
-    rho = 1  # distance resolution in pixels of the Hough grid
-    theta = np.pi / 180  # angular resolution in radians of the Hough grid
-    threshold = 15  # minimum number of votes (intersections in Hough grid cell)
-    min_line_length = 50  # minimum number of pixels making up a line
-    max_line_gap = 120  # maximum gap in pixels between connectable line segments
+    # The parameters for the Hough line detection
+    rho = 1
+    theta = np.pi / 180
+    threshold = 15
+    min_line_length = 50
+    max_line_gap = 120
         
-    # Run Hough on edge detected image
+    # Run Hough line transform on the canny-processed image,
+    # detecting line segments in the image based on the given parameters
     lines = cv2.HoughLinesP(edges, rho, theta, threshold, np.array([]),
                             min_line_length, max_line_gap)
     
     # Differ between vertical and horizontal lines
     vertical_lines = []
     horizontal_lines = []
-    
     for element in lines:
         un = np.squeeze(element)
         if abs(un[2]-un[0]) < 40:
             vertical_lines.append(un)
         elif abs(un[3]-un[1]) < 40:
             horizontal_lines.append(un)
-        else: 
-            print(un)
             
-    # Finding intersections between vertical and horizontal lines        
+    # Finding intersections between vertical and horizontal lines
+    # Intersections outside of the image's size are excluded
     inter = []
     for ho_line in horizontal_lines:
         for ve_line in vertical_lines:
@@ -62,7 +61,7 @@ def transformation(img, edges, rgb_img=None, plot_img=False, origin_plot=False):
             if x and (x < img.shape[1]) and (y < img.shape[0]):
                 inter.append([x, y])
      
-    # Identify the outerpoints of the grid's main corners
+    # Identify the grid's main corners
     inter = np.array(inter)
     pts1 = np.zeros((4, 2), dtype="float32")
     s = inter.sum(axis=1)
@@ -73,7 +72,7 @@ def transformation(img, edges, rgb_img=None, plot_img=False, origin_plot=False):
     pts1[1] = inter[np.argmin(d)]
     pts1[3] = inter[np.argmax(d)]
         
-    # Construct new defined grid
+    # Construct a new image containing the copped grid
     wa = np.sqrt((pts1[2][0]-pts1[3][0])**2 + (pts1[2][1]-pts1[3][1])**2)
     wb = np.sqrt((pts1[1][0]-pts1[0][0])**2 + (pts1[1][1] - pts1[0][1])**2)
     maxw = max(int(wa), int(wb))
@@ -84,11 +83,13 @@ def transformation(img, edges, rgb_img=None, plot_img=False, origin_plot=False):
     
     pts2 = np.array([[0, 0], [maxw-1, 0], [maxw-1, maxh-1], [0, maxh-1]], dtype='float32')
 
+    # Calculate the homography and transform the image
     mtx = cv2.getPerspectiveTransform(pts1, pts2)
     dst = cv2.warpPerspective(img, mtx, (maxw, maxh))
-    
+
+    # Print detected lines and intersections if origin_plot = True
+    # Print the cropped grid if plot_image = True
     if plot_img:
-        # Print lines and points   as part of image      
         point_image = np.copy(rgb_img) * 0            
         for coor in pts1:
             point_image[int(coor[1]), int(coor[0]), :] = [0, 0, 255]
@@ -102,11 +103,11 @@ def transformation(img, edges, rgb_img=None, plot_img=False, origin_plot=False):
 
         if origin_plot:
             plt.figure()
-            plt.imshow(points)
+            plt.imshow(points, cmap='gray')
             plt.show()
         
         plt.figure()
-        plt.imshow(dst)
+        plt.imshow(dst, cmap='gray')
         plt.show()
         
     return dst, mtx, maxw, maxh
